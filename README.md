@@ -1,4 +1,4 @@
-# OCS-to-Excel-Formatter
+# OCS to Excel Formatter
 A program that downloads and processes csv files from OCS, and then exports a formatted excel spreadsheet.
 
 
