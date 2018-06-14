@@ -37,7 +37,7 @@ class ExcelFilter:
     def getmodellist(self):
         return self.model
    
-    def getLists(self):
+    def getLists(self, year, lstyear):
         if 'RAM (MB)' in self.df:
             self.ramList = list(self.df['RAM (MB)'].unique())
             self.ramList.sort()
@@ -52,9 +52,13 @@ class ExcelFilter:
             self.userList = list(self.df['User'].unique())
         if 'Operating system' in self.df:
             self.osList = list(self.df['Operating system'].unique())
+            self.osList.append('Microsoft Windows 7 (ALL Versions)')
+            self.osList.append('Microsoft Windows 10 (ALL Versions)')
+            self.osList.append('Microsoft Windows 8.1 (ALL Versions)')
             self.osList.sort()
         if 'Last inventory' in self.df:
             temp = list(self.df['Last inventory'])
+            self.year.append(year + ' & ' + lstyear)
             for item in temp:
                 if item[0:4] not in self.year:
                     self.year.append(item[0:4])
@@ -85,12 +89,21 @@ class ExcelFilter:
     def dropuser(self, userval):
         self.df = self.df.drop(self.df[self.df['User'] != userval].index)
         
-    def dropyear(self, year):
-        self.df = self.df.drop(self.df[self.df['Last inventory'].str[0:4] != year].index)
+    def dropyear(self, year, year2= ''):
+        if year2 != '':
+            self.df = self.df.drop(self.df[(self.df['Last inventory'].str[0:4] != year) & (self.df['Last inventory'].str[0:4] != year2)].index)
+        else:
+            self.df = self.df.drop(self.df[self.df['Last inventory'].str[0:4] != year].index)
         
-    def dropos(self, osval):
-        self.df = self.df.drop(self.df[self.df['Operating system'] != osval].index)
-        
+    def dropos(self, osval, os2val = '', os3val = ''):
+        if os2val != '':
+            if os3val != '':
+                self.df = self.df.drop(self.df[(self.df['Operating system'] != osval) & (self.df['Operating system'] != os2val) & (self.df['Operating system'] != os3val)].index)
+            else:
+                self.df = self.df.drop(self.df[(self.df['Operating system'] != osval) & (self.df['Operating system'] != os2val)].index)
+        else:
+            self.df = self.df.drop(self.df[self.df['Operating system'] != osval].index)
+    
     def dropbranch(self, branch):
         if len(branch) == 2:
             tempbranch = branch + '-'

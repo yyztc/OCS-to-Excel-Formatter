@@ -10,12 +10,18 @@ from ExcelGenerate import ExcelGenerate
 from WebScript import WebScript
 from ExcelFilter import ExcelFilter
 import os.path
-
+from datetime import date
+from Monitorloop import MonitorLoop
 
 class MyFirstGUI(Frame):
     def __init__(self, master):
         self.excelFilt = object
         self.excelGen = object
+        
+        self.curryear = str(date.today().year)
+        self.lstyear = str(date.today().year - 1)
+        
+        self.cookies=object
         
         self.master = master
         super().__init__(master)
@@ -54,12 +60,20 @@ class MyFirstGUI(Frame):
         self.entry_filename.grid(row=2, column=1)
         
         self.logbtn = Button(self, text="Login and Go", command=self.run)
-        self.logbtn.grid(columnspan=2)
+        self.logbtn.grid(columnspan=2, pady = 10)
         master.bind('<Return>', self.func)
-
+        
+        
+        self.monitorlabel = Label(self, text="Clicking below takes a few minutes.")
+        self.monitorbrn = Button(self, text="Login and Launch Monitor Grabber", command=self.run2)
+        self.monitorbrn.grid(row = 5, columnspan = 2, pady=10, padx = 10)
+        self.monitorlabel.grid(row=4, columnspan=2)
         
         self.pack()
         
+
+    def getDir(self):
+        return self.dir
 
     def func(self, something):
         self.run()
@@ -68,9 +82,40 @@ class MyFirstGUI(Frame):
         global root
         root.destroy()
 
+    def run2(self):
+        self.exportfilename = self.entry_filename.get() +'.xlsx'
+        if os.path.isfile(self.exportfilename):
+            result = messagebox.askokcancel(title='Overwrite?', message='The file "' +  self.exportfilename + '" is about to be overwritten. Proceed?')
+            if result == True:
+                pass
+            else:
+                return self.master
+        self.excelGen = ExcelGenerate(self.exportfilename,self.filename)
+        try:
+            x = WebScript(str(self.entry_username.get()),str(self.entry_password.get()), self.dir + '/' + self.filename)
+            x.OCS()
+            self.excelGen.grabData()  
+            self.excelGen.generate()
+            os.remove(self.exportfilename)
+        except:
+            messagebox.showerror("Error", "Invalid Login")
+            return self.master
+        
+        os.remove('export.csv')
+        run = MonitorLoop(str(self.entry_username.get()),str(self.entry_password.get()), self.exportfilename, self.dir)
+        run.go()
+        os.remove('monitors.csv')
+        messagebox.showinfo('Complete', 'Monitor Spreadsheet has been constructed.')
+        self.quit()
 
     def run(self):
         self.exportfilename = self.entry_filename.get() +'.xlsx'
+        if os.path.isfile(self.exportfilename):
+            result = messagebox.askokcancel(title='Overwrite?', message='The file "' +  self.exportfilename + '" is about to be overwritten. Proceed?')
+            if result == True:
+                pass
+            else:
+                return self.master
         self.excelGen = ExcelGenerate(self.exportfilename,self.filename)
         try:
             x = WebScript(str(self.entry_username.get()),str(self.entry_password.get()), self.dir + '/' + self.filename)
@@ -91,7 +136,7 @@ class MyFirstGUI(Frame):
         
         
         self.excelFilt = ExcelFilter(self.exportfilename)
-        self.excelFilt.getLists()
+        self.excelFilt.getLists(self.curryear, self.lstyear)
        
         
         newwin = Toplevel(root)
@@ -155,11 +200,21 @@ class MyFirstGUI(Frame):
         if self.ram != '':
             self.excelFilt.dropram(self.ram)
         if self.os != '':
-            self.excelFilt.dropos(self.os)
+            if self.os == 'Microsoft Windows 7 (ALL Versions)':
+                self.excelFilt.dropos('Microsoft Windows 7 Enterprise', 'Microsoft Windows 7 Professional')
+            elif self.os == 'Microsoft Windows 10 (ALL Versions)':
+                self.excelFilt.dropos('Microsoft Windows 10 Enterprise', 'Microsoft Windows 10 Pro', 'Microsoft Windows 10 Enterprise 2016 LTSB')
+            elif self.os == 'Microsoft Windows 8.1 (ALL Versions)':
+                self.excelFilt.dropos('Microsoft Windows 8.1 Enterprise', 'Microsoft Windows 8.1 Pro')
+            else:
+                self.excelFilt.dropos(self.os)
         if self.branch != '':
             self.excelFilt.dropbranch(self.branch)
         if self.year != '':
-            self.excelFilt.dropyear(self.year)
+            if self.year == (self.curryear + ' & ' + self.lstyear):
+                self.excelFilt.dropyear(self.curryear, self.lstyear)
+            else:
+                self.excelFilt.dropyear(self.year)
         if self.user != '':
             self.excelFilt.dropuser(self.user)
         if self.model != '':
